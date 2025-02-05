@@ -1,15 +1,15 @@
 package com.example.Restaurante.Modelo;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 @Entity
 @Data
 @Table(name = "meseros")
+
 public class Meseros implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "meseros_generator")
