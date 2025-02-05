@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 @Entity
 @Data
 @Table(name = "meseros")
-
 public class Meseros implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "meseros_generator")
