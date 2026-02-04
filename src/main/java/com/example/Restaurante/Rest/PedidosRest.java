@@ -5,6 +5,11 @@ import com.example.Restaurante.Modelo.Fechas;
 import com.example.Restaurante.Modelo.Pedidos;
 import com.example.Restaurante.Servicio.MesasServicio;
 import com.example.Restaurante.Servicio.PedidosServicio;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -21,6 +26,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+@Tag(name = "Pedidos", description = "Gestión de Pedidos del restaurante")
 @RestController
 @RequestMapping("/pedidos/")
 public class PedidosRest {
@@ -107,8 +113,14 @@ public class PedidosRest {
         }
     }
 
+
+    @Operation(summary = "Crear Pedido", description = "Crea un nuevo Pedido")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Pedido creado"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos")
+    })
     @PostMapping
-    private ResponseEntity<Pedidos> savePedido(@RequestBody Pedidos pedidos) {
+    private ResponseEntity<Pedidos> savePedido(@Valid @RequestBody Pedidos pedidos) {
         try {
             Pedidos pedidoGuardado = pedidosServicio.save(pedidos);
             return ResponseEntity.created(new URI("/pedidos/" + pedidoGuardado.getId())).body(pedidoGuardado);

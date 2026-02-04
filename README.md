@@ -34,3 +34,6 @@ Rest -> Servicio -> Repositorio -> DTOs
 2. Buen uso de query
 3. Relación entre entidades
 
+## Documentación API
+Swagger disponible en:
+http://localhost:8080/swagger-ui/index.html
