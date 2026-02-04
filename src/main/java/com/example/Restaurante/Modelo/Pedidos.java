@@ -19,22 +19,22 @@ public class Pedidos implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss", timezone = "GMT-0500")
     private LocalDateTime fecha;
-    @ManyToOne
-    @JoinColumn (name="id_meseros")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_meseros")
     private Meseros mesero;
-    @ManyToOne
-    @JoinColumn (name="id_mesas")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_mesas")
     private Mesas mesa;
-    @ManyToOne
-    @JoinColumn (name="id_estados")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_estados")
     private Estados estado;
-    @ManyToOne
-    @JoinColumn (name="id_mediosdepago")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_mediosdepago")
     private MediosdePago mediodepago;
-    @ManyToOne
-    @JoinColumn (name="id_tiposdepedido")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tiposdepedido")
     private TipodePedido tipodepedido;
-    @ManyToOne
-    @JoinColumn (name="id_clientes")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_clientes")
     private Clientes cliente;
 }
