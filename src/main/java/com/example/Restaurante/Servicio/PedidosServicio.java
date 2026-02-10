@@ -1,24 +1,19 @@
 package com.example.Restaurante.Servicio;
 
-import com.example.Restaurante.DTOs.PedidosDTO;
 import com.example.Restaurante.Excepciones.PedidoNotFoundException;
-import com.example.Restaurante.Mapper.PedidosMapper;
 import com.example.Restaurante.Modelo.Pedidos;
 import com.example.Restaurante.Modelo.PlatosxPedido;
 import com.example.Restaurante.Repositorio.PedidosRepositorio;
 import com.example.Restaurante.Repositorio.PlatosxPedidoRepositorio;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,15 +22,23 @@ public class PedidosServicio {
     @Autowired
     private PedidosRepositorio pedidosRepositorio;
     private PlatosxPedidoRepositorio platosxPedidoRepositorio;
-    private PedidosMapper pedidosMapper;
 
-    public PedidosServicio(PedidosMapper pedidosMapper) {
-        this.pedidosMapper = pedidosMapper;
+    public List<Pedidos> findAll() {
+        return pedidosRepositorio.findAll();
     }
-
-    public PedidosDTO findPedidosById(Long id) {
-        Pedidos pedidos = pedidosRepositorio.findById(id).orElseThrow(() -> new PedidoNotFoundException(id));
-        return pedidosMapper.toDto(pedidos);
+    public List<Pedidos> findPedidoById (Long id){
+        List<Pedidos> PedidosRespuesta= new ArrayList<>();
+        List<Pedidos> Pedidos = pedidosRepositorio.findAll();
+        for (int i=0; i<Pedidos.size(); i++) {
+            if (Pedidos.get(i).getId().equals(id)) {
+                PedidosRespuesta.add(Pedidos.get(i));
+            }
+        }
+        return PedidosRespuesta;
+    }
+    public Optional<Pedidos> findById(Long id) {
+        new PedidoNotFoundException(id);
+        return pedidosRepositorio.findById(id);
     }
 
     private LocalDateTime inicioDia() {
@@ -62,15 +65,6 @@ public class PedidosServicio {
         return pedidosRepositorio.count();
     }
 
-
-    public Page<PedidosDTO> findAll(int page, int size) {
-
-        Pageable pageable = PageRequest.of(page, size, Sort.by("fecha").descending());
-
-        Page<Pedidos> pedidos = pedidosRepositorio.findAll(pageable);
-
-        return pedidos.map(pedidosMapper::toDto);
-    }
 
     public List<Pedidos> verPedidosActivosEnMesas() {
         return pedidosRepositorio.verPedidosActivosEnMesas();
@@ -140,10 +134,6 @@ public class PedidosServicio {
 
     public void insertarEstado(Long id_Pedido, Long id_Estado) {
         pedidosRepositorio.insertarEstado(id_Pedido, id_Estado);
-    }
-
-    public Optional<Pedidos> findById(Long id) {
-        return pedidosRepositorio.findById(id);
     }
 
     public Boolean deleteById(Long id) {

@@ -1,6 +1,5 @@
 package com.example.Restaurante.Rest;
 
-import com.example.Restaurante.DTOs.PedidosDTO;
 import com.example.Restaurante.Modelo.Fechas;
 import com.example.Restaurante.Modelo.Pedidos;
 import com.example.Restaurante.Servicio.MesasServicio;
@@ -11,20 +10,15 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 @Tag(name = "Pedidos", description = "Gestión de Pedidos del restaurante")
 @RestController
@@ -36,11 +30,8 @@ public class PedidosRest {
     private MesasServicio mesasServicio;
 
     @GetMapping
-    public ResponseEntity<Page<PedidosDTO>> getAllPedidos(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        return ResponseEntity.ok(pedidosServicio.findAll(page, size));
+    public ResponseEntity<List<Pedidos>> getAllPedidos(){
+        return ResponseEntity.ok(pedidosServicio.findAll());
     }
 
     @GetMapping(value = "verPedidosActivosEnMesas")
@@ -90,8 +81,8 @@ public class PedidosRest {
     }
 
     @GetMapping("{id}")
-    private ResponseEntity<PedidosDTO> getpedidobyid(@PathVariable("id") Long idPedido) {
-        return ResponseEntity.ok(pedidosServicio.findPedidosById(idPedido));
+    private ResponseEntity<List<Pedidos>> findPedidoById(@PathVariable("id") Long idPedido) {
+        return ResponseEntity.ok(pedidosServicio.findPedidoById(idPedido));
     }
 
     @PostMapping(value = "editPedido")
@@ -114,20 +105,19 @@ public class PedidosRest {
     }
 
 
-    @Operation(summary = "Crear Pedido", description = "Crea un nuevo Pedido")
+    @Operation(summary = "Crear Pedido", description = "Crea un nuevo pedido")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Pedido creado"),
+            @ApiResponse(responseCode = "201", description = "Pedido creado correctamente"),
             @ApiResponse(responseCode = "400", description = "Datos inválidos")
     })
     @PostMapping
-    private ResponseEntity<Pedidos> savePedido(@Valid @RequestBody Pedidos pedidos) {
-        try {
-            Pedidos pedidoGuardado = pedidosServicio.save(pedidos);
-            return ResponseEntity.created(new URI("/pedidos/" + pedidoGuardado.getId())).body(pedidoGuardado);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+    public ResponseEntity<Pedidos> savePedido(@Valid @RequestBody Pedidos pedidos) throws URISyntaxException {
+        Pedidos pedidoGuardado = pedidosServicio.save(pedidos);
+        return ResponseEntity
+                .created(new URI("/pedidos/" + pedidoGuardado.getId()))
+                .body(pedidoGuardado);
     }
+
 
     @DeleteMapping(value = "delete/{id}")
     private ResponseEntity<Boolean> cancelarPedido(@PathVariable("id") Long id) {
