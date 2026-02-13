@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -32,7 +33,8 @@ public class Pedidos implements Serializable {
     @ManyToOne
     @JoinColumn(name = "id_clientes")
     private Clientes cliente;
-
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal total = BigDecimal.ZERO;
     @Enumerated(EnumType.STRING)
     private Estados estado;
     @Enumerated(EnumType.STRING)

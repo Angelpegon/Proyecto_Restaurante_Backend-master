@@ -2,11 +2,9 @@ package com.example.Restaurante.Servicio;
 
 import com.example.Restaurante.Configuracion.Estados;
 import com.example.Restaurante.Configuracion.TipoDePedido;
+import com.example.Restaurante.Configuracion.TipoMovimiento;
 import com.example.Restaurante.Excepciones.PedidoNotFoundException;
-import com.example.Restaurante.Modelo.Clientes;
-import com.example.Restaurante.Modelo.Pedido;
-import com.example.Restaurante.Modelo.Pedidos;
-import com.example.Restaurante.Modelo.PlatosxPedido;
+import com.example.Restaurante.Modelo.*;
 import com.example.Restaurante.Repositorio.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,10 +26,8 @@ public class PedidosServicio {
 
     private final PedidosRepositorio pedidosRepositorio;
     private final PlatosxPedidoRepositorio platosxPedidoRepositorio;
-    private final MesasRepositorio mesasRepositorio;
-    private final MeserosRepositorio meserosRepositorio;
-    private final MediosDePagoRepositorio mediosDePagoRepositorio;
     private final PlatosxPedidoServicio platosxPedidoServicio;
+    private final MovimientosRepositorio movimientosRepositorio;
 
     public List<Pedidos> findAll() {
         return pedidosRepositorio.findAll();
@@ -54,16 +51,39 @@ public class PedidosServicio {
 
 //       // 1️⃣ Validar transición (opcional pero profesional)
 //        validarTransicion(estadoAnterior, nuevoEstado);
-
         // 2️⃣ Cambiar estado
         pedido.setEstado(nuevoEstado);
-
         pedidosRepositorio.save(pedido);
-
 //        // 3️⃣ Si pasó a PAGADO → registrar ingreso
 //        if (nuevoEstado == EstadoPedido.PAGADO) {
 //            registrarIngreso(pedido);
 //        }
+    }
+
+    public BigDecimal calcularTotal(Long pedidoId) {
+        Pedido pedido = new Pedido();
+        return pedido.getPlatosxPedido().stream()
+                .map(detalle ->
+                        detalle.getPlato().getValor()
+                                .multiply(BigDecimal.valueOf(detalle.getCantidad()))
+                )
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public void registrarIngresoDesdePedido(Pedidos pedido) {
+        MovimientosFinancieros movimiento = new MovimientosFinancieros();
+        movimiento.setFecha(LocalDateTime.now());
+        movimiento.setTipo(TipoMovimiento.INGRESO);
+        movimiento.setMonto(pedido.getTotal());
+        movimiento.setDescripcion("Ingreso por pedido #" + pedido.getId());
+        movimientosRepositorio.save(movimiento);
+    }
+
+    public void finalizarPedido(Pedidos pedidos) {
+        Pedidos pedido = pedidosRepositorio.findById(pedidos.getId()).orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+        insertarMediodePago(pedido.getId(), pedidos.getMediodepago().getId());
+        cambiarEstado(pedidos.getId(), Estados.TERMINADO);
+        registrarIngresoDesdePedido(pedido);
     }
 
     /**
@@ -72,17 +92,13 @@ public class PedidosServicio {
      */
     @Transactional
     public Pedido crearPedidoCompleto(Pedido request) {
-
         Pedidos pedidos = request.getPedidos();
-
         if (pedidos == null) {
             throw new RuntimeException("El pedido no puede ser nulo");
         }
-
-        // 1️⃣ Fecha automática
+        // Fecha automática
         pedidos.setFecha(LocalDateTime.now());
-
-        // 2️⃣ Regla: si es en mesa y no tiene cliente → cliente genérico
+        // si es en mesa y no tiene cliente → cliente genérico
         if (pedidos.getTipodepedido() == TipoDePedido.EN_MESA &&
                 (pedidos.getCliente() == null ||
                         pedidos.getCliente().getId() == null)) {
@@ -90,14 +106,13 @@ public class PedidosServicio {
             clienteGenerico.setId(1L);
             pedidos.setCliente(clienteGenerico);
         }
-
-        // 3️⃣ Guardar pedido
+        BigDecimal totalCalculado = calcularTotal(request.getPedidos().getId());
+        pedidos.setTotal(totalCalculado);
+        // Guardar pedido
         Pedidos pedidoGuardado = save(pedidos);
-
-        // 4️⃣ Cambiar estado
+        // Cambiar estado
         cambiarEstado(pedidoGuardado.getId(), Estados.PENDIENTE);
-
-        // 5️⃣ Guardar platos asociados
+        // Guardar platos asociados
         if (request.getPlatosxPedido() != null) {
             request.getPlatosxPedido().forEach(platoDetalle -> {
                 platoDetalle.setId(null); // evitar conflictos
@@ -123,12 +138,33 @@ public class PedidosServicio {
         }
     }
 
-    public void addPlatosxPedido (Pedido pedido){
-        for (int i = 0; i < pedido.getPlatosxPedido().size(); i++) {
-            pedido.getPlatosxPedido().get(i).setPedidos(pedido.getPedidos());
-            platosxPedidoServicio.savePlatoxPedido(pedido.getPlatosxPedido().get(i));
+    @Transactional
+    public void addPlatosxPedido(Pedido pedido) {
+
+        Pedidos pedidoBD = pedidosRepositorio.findById(
+                pedido.getPedidos().getId()
+        ).orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
+        // Validar estado
+        if (pedidoBD.getEstado() != Estados.PENDIENTE) {
+            throw new IllegalStateException("No se puede modificar un pedido confirmado");
         }
+        // Guardar nuevos platos
+        for (PlatosxPedido pxp : pedido.getPlatosxPedido()) {
+            pxp.setPedidos(pedidoBD);
+            platosxPedidoServicio.savePlatoxPedido(pxp);
+        }
+        // Recalcular total REAL desde BD
+        BigDecimal totalActual = pedidoBD.getTotal();
+        BigDecimal totalAgregado = pedido.getPlatosxPedido().stream()
+                .map(detalle ->
+                        detalle.getPlato().getValor()
+                                .multiply(BigDecimal.valueOf(detalle.getCantidad()))
+                )
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        pedidoBD.setTotal(totalActual.add(totalAgregado));
+        pedidosRepositorio.save(pedidoBD);
     }
+
 //    @Transactional
 //    public Pedidos crearPedido(Pedidos pedidos) {
 //
@@ -264,9 +300,6 @@ public class PedidosServicio {
         pedidosRepositorio.updateMesaPedido(id_Pedido, id_Mesa);
     }
 
-//    public void insertarEstado(Long id_Pedido, Long id_Estado) {
-//        pedidosRepositorio.insertarEstado(id_Pedido, id_Estado);
-//    }
 
     public Boolean deleteById(Long id) {
         if (pedidosRepositorio.existsById(id)) {

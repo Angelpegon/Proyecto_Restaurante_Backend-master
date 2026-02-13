@@ -36,17 +36,17 @@ public class PedidosRest {
     }
 
     @GetMapping(value = "verPedidosActivosEnMesas")
-    private ResponseEntity<List<Pedidos>> verPedidosActivosEnMesas() {
+    public ResponseEntity<List<Pedidos>> verPedidosActivosEnMesas() {
         return ResponseEntity.ok(pedidosServicio.verPedidosActivosEnMesas());
     }
 
     @GetMapping(value = "verPedidosActivosEnDomicilios")
-    private ResponseEntity<List<Pedidos>> verPedidosActivosEnDomicilios() {
+    public ResponseEntity<List<Pedidos>> verPedidosActivosEnDomicilios() {
         return ResponseEntity.ok(pedidosServicio.verPedidosActivosEnDomicilios());
     }
 
     @PostMapping(value = "buscarPedidosporFecha")
-    private ResponseEntity<List<Pedidos>> buscarPedidosporFecha(@RequestBody Fechas fechas) {
+    public ResponseEntity<List<Pedidos>> buscarPedidosporFecha(@RequestBody Fechas fechas) {
         //Logger.getLogger( "Logs").log(Level.INFO,String.valueOf(fechas));
         DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         try {
@@ -61,7 +61,7 @@ public class PedidosRest {
     }
 
     @PostMapping(value = "buscarPedidosporText")
-    private ResponseEntity<List<Pedidos>> buscarPedidosporText(@RequestBody String text) {
+    public ResponseEntity<List<Pedidos>> buscarPedidosporText(@RequestBody String text) {
         //Logger.getLogger( "Logs").log(Level.INFO,String.valueOf(text));
         try {
             return ResponseEntity.ok(pedidosServicio.buscarPedidosporText(text));
@@ -71,61 +71,61 @@ public class PedidosRest {
     }
 
     @PostMapping(value = "finalizarPedido")
-    private ResponseEntity<Pedidos> finalizarPedido(@RequestBody Pedidos pedidos) {
-        pedidosServicio.insertarMediodePago(pedidos.getId(), pedidos.getMediodepago().getId());
-        pedidosServicio.cambiarEstado(pedidos.getId(), Estados.TERMINADO);
-            return ResponseEntity.created(URI.create("/pedidos/" + pedidos.getId())).body(pedidos);
+    public ResponseEntity<Pedidos> finalizarPedido(@RequestBody Pedidos pedidos) {
+        pedidosServicio.finalizarPedido(pedidos);
+        //System.out.println("TOTAL DEL PEDIDO: " + pedidos);
+        return ResponseEntity.created(URI.create("/pedidos/" + pedidos.getId())).body(pedidos);
     }
 
     @GetMapping("{id}")
-    private ResponseEntity<List<Pedidos>> findPedidoById(@PathVariable("id") Long idPedido) {
+    public ResponseEntity<List<Pedidos>> findPedidoById(@PathVariable("id") Long idPedido) {
         return ResponseEntity.ok(pedidosServicio.findPedidoById(idPedido));
     }
 
     @PostMapping(value = "editPedido")
-    private ResponseEntity<Pedidos> editPedido(@RequestBody Pedidos pedidos) {
+    public ResponseEntity<Pedidos> editPedido(@RequestBody Pedidos pedidos) {
         //Logger.getLogger( "Logs").log(Level.INFO,String.valueOf(pedidos));
-            pedidosServicio.editPedido(pedidos);
-            return ResponseEntity.created(URI.create("/pedidos/" + pedidos.getId())).body(pedidos);
-        }
+        pedidosServicio.editPedido(pedidos);
+        return ResponseEntity.created(URI.create("/pedidos/" + pedidos.getId())).body(pedidos);
+    }
 
     @Operation(summary = "Crear Pedido", description = "Crea un nuevo pedido")
     @ApiResponses({@ApiResponse(responseCode = "201", description = "Pedido creado correctamente"), @ApiResponse(responseCode = "400", description = "Datos inválidos")})
     @PostMapping(value = "savePedido")
-    private ResponseEntity<Pedido> savePedido(@Valid @RequestBody Pedido pedido) {
+    public ResponseEntity<Pedido> savePedido(@Valid @RequestBody Pedido pedido) {
         Pedido pedidoGuardado = pedidosServicio.crearPedidoCompleto(pedido);
         return ResponseEntity.created(URI.create("/pedidos/" + pedidoGuardado.getPedidos().getId())).body(pedidoGuardado);
     }
 
     @PostMapping(value = "addPlatosxPedido")
-    private ResponseEntity<Pedido> addPlatosxPedido(@RequestBody Pedido pedido) {
+    public ResponseEntity<Pedido> addPlatosxPedido(@RequestBody Pedido pedido) {
         pedidosServicio.addPlatosxPedido(pedido);
         return ResponseEntity.created(URI.create("/platosxpedido/" + pedido.getPedidos().getId())).body(pedido);
     }
 
     @DeleteMapping(value = "delete/{id}")
-    private ResponseEntity<Boolean> cancelarPedido(@PathVariable("id") Long id) {
+    public ResponseEntity<Boolean> cancelarPedido(@PathVariable("id") Long id) {
         pedidosServicio.cambiarEstado(id, Estados.CANCELADO);
         return ResponseEntity.ok(pedidosServicio.findById(id).isEmpty());
     }
 
     @GetMapping("totalPedidos")
-    private ResponseEntity<Long> totalPedidos() {
+    public ResponseEntity<Long> totalPedidos() {
         return ResponseEntity.ok(pedidosServicio.totalPedidos());
     }
 
     @GetMapping("totalPedidosHoy")
-    private ResponseEntity<Long> totalPedidosHoy() {
+    public ResponseEntity<Long> totalPedidosHoy() {
         return ResponseEntity.ok(pedidosServicio.totalPedidosHoy());
     }
 
     @GetMapping("totalPedidosDomiciliosHoy")
-    private ResponseEntity<Long> totalPedidosDomiciliosHoy() {
+    public ResponseEntity<Long> totalPedidosDomiciliosHoy() {
         return ResponseEntity.ok(pedidosServicio.totalPedidosDomiciliosHoy());
     }
 
     @GetMapping("totalPedidosMesaHoy")
-    private ResponseEntity<Long> totalPedidosMesaHoy() {
+    public ResponseEntity<Long> totalPedidosMesaHoy() {
         return ResponseEntity.ok(pedidosServicio.totalPedidosMesaHoy());
     }
 }
