@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -25,14 +24,14 @@ public interface PedidosRepositorio extends JpaRepository<Pedidos, Long> {
     @Query("UPDATE Pedidos p SET p.mesa.id = :idMesas WHERE p.id = :pedidoId")
     void updateMesaPedido(@Param("pedidoId") Long pedidoId, @Param("idMesas") Long idMesas);
 
-    @Modifying
-    @Query("UPDATE Pedidos p SET p.estado.id = :id_estados WHERE p.id = :pedidoId")
-    void insertarEstado(@Param("pedidoId") Long pedidoId, @Param("id_estados") Long id_estados);
+//    @Modifying
+//    @Query("UPDATE Pedidos p SET p.estado = 'id_estados' WHERE p.id = :pedidoId")
+//    void insertarEstado(@Param("pedidoId") Long pedidoId, @Param("id_estados") Long id_estados);
 
-    @Query("SELECT p FROM Pedidos p WHERE p.estado.id = 1 AND p.tipodepedido.id = 1")
+    @Query("SELECT p FROM Pedidos p WHERE p.estado = 'PENDIENTE' AND p.tipodepedido = 'EN_MESA'")
     List<Pedidos> verPedidosActivosEnMesas();
 
-    @Query("SELECT p FROM Pedidos p WHERE p.estado.id = 1 AND p.tipodepedido.id = 2")
+    @Query("SELECT p FROM Pedidos p WHERE p.estado = 'PENDIENTE' AND p.tipodepedido = 'DOMICILIO'")
     List<Pedidos> verPedidosActivosEnDomicilios();
 
     @Modifying
@@ -48,10 +47,10 @@ public interface PedidosRepositorio extends JpaRepository<Pedidos, Long> {
     @Query("SELECT COUNT(p) FROM Pedidos p WHERE p.fecha >= :inicioDia AND p.fecha < :finDia")
     Long contarPedidosHoy(@Param("inicioDia") LocalDateTime inicioDia, @Param("finDia") LocalDateTime finDia);
 
-    @Query("SELECT COUNT(p) FROM Pedidos p WHERE p.fecha >= :inicioDia AND p.fecha < :finDia AND p.tipodepedido.id = 1")
+    @Query("SELECT COUNT(p) FROM Pedidos p WHERE p.fecha >= :inicioDia AND p.fecha < :finDia AND p.tipodepedido = 'EN_MESA'")
     Long contarPedidosMesaHoy(@Param("inicioDia") LocalDateTime inicioDia, @Param("finDia") LocalDateTime finDia);
 
-    @Query("SELECT COUNT(p) FROM Pedidos p WHERE p.fecha >= :inicioDia AND p.fecha < :finDia AND p.tipodepedido.id = 2")
+    @Query("SELECT COUNT(p) FROM Pedidos p WHERE p.fecha >= :inicioDia AND p.fecha < :finDia AND p.tipodepedido ='DOMICILIO'")
     Long contarPedidosDomiciliosHoy(@Param("inicioDia") LocalDateTime inicioDia, @Param("finDia") LocalDateTime finDia);
 
     //@Query("SELECT COALESCE(SUM(p.total), 0) FROM Pedidos p WHERE p.fecha >= :inicioDia AND p.fecha < :finDia AND p.estado.id = 2")

@@ -1,5 +1,6 @@
 package com.example.Restaurante.Seguridad;
 
+import com.example.Restaurante.Configuracion.Rol;
 import com.example.Restaurante.Modelo.Usuarios;
 import com.example.Restaurante.Repositorio.UsuariosRepositorio;
 import lombok.RequiredArgsConstructor;

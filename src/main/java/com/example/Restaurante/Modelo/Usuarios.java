@@ -1,15 +1,15 @@
 package com.example.Restaurante.Modelo;
 
-import com.example.Restaurante.Seguridad.Rol;
+import com.example.Restaurante.Configuracion.Rol;
 import jakarta.persistence.*;
 import lombok.*;
 
 
 //Entidad que representa un usuario del sistema.
 //Cada usuario tendrá sus propios ingresos, gastos y deudas.
+@Data
 @Entity
 @Table(name = "usuarios")
-@Data
 public class Usuarios {
 
     //Identificador único del usuario

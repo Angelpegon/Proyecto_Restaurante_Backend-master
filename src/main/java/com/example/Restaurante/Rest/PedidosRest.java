@@ -1,36 +1,37 @@
 package com.example.Restaurante.Rest;
 
+import com.example.Restaurante.Configuracion.Estados;
 import com.example.Restaurante.Modelo.Fechas;
+import com.example.Restaurante.Modelo.Pedido;
 import com.example.Restaurante.Modelo.Pedidos;
-import com.example.Restaurante.Servicio.MesasServicio;
 import com.example.Restaurante.Servicio.PedidosServicio;
+import com.example.Restaurante.Servicio.PlatosxPedidoServicio;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-@Tag(name = "Pedidos", description = "Gestión de Pedidos del restaurante")
 @RestController
 @RequestMapping("/pedidos/")
+@RequiredArgsConstructor
+@Tag(name = "Pedidos", description = "Gestión de Pedidos del restaurante")
 public class PedidosRest {
-    @Autowired
-    private PedidosServicio pedidosServicio;
-    @Autowired
-    private MesasServicio mesasServicio;
+
+    private final PedidosServicio pedidosServicio;
+    private final PlatosxPedidoServicio platosxPedidoServicio;
 
     @GetMapping
-    public ResponseEntity<List<Pedidos>> getAllPedidos(){
+    public ResponseEntity<List<Pedidos>> getAllPedidos() {
         return ResponseEntity.ok(pedidosServicio.findAll());
     }
 
@@ -72,12 +73,8 @@ public class PedidosRest {
     @PostMapping(value = "finalizarPedido")
     private ResponseEntity<Pedidos> finalizarPedido(@RequestBody Pedidos pedidos) {
         pedidosServicio.insertarMediodePago(pedidos.getId(), pedidos.getMediodepago().getId());
-        pedidosServicio.insertarEstado(pedidos.getId(), 2l);
-        try {
-            return ResponseEntity.created(new URI("/pedidos/" + pedidos.getId())).body(pedidos);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
+        pedidosServicio.cambiarEstado(pedidos.getId(), Estados.TERMINADO);
+            return ResponseEntity.created(URI.create("/pedidos/" + pedidos.getId())).body(pedidos);
     }
 
     @GetMapping("{id}")
@@ -88,47 +85,33 @@ public class PedidosRest {
     @PostMapping(value = "editPedido")
     private ResponseEntity<Pedidos> editPedido(@RequestBody Pedidos pedidos) {
         //Logger.getLogger( "Logs").log(Level.INFO,String.valueOf(pedidos));
-        if (pedidos.getMesero() != null && pedidos.getMesa() != null) {
-            pedidosServicio.updatePedido(pedidos.getId(), pedidos.getMesero().getId(), pedidos.getMesa().getId());
+            pedidosServicio.editPedido(pedidos);
+            return ResponseEntity.created(URI.create("/pedidos/" + pedidos.getId())).body(pedidos);
         }
-        if (pedidos.getMesero() != null && pedidos.getMesa() == null) {
-            pedidosServicio.updateMeseroPedido(pedidos.getId(), pedidos.getMesero().getId());
-        }
-        if (pedidos.getMesero() == null && pedidos.getMesa() != null) {
-            pedidosServicio.updateMesaPedido(pedidos.getId(), pedidos.getMesa().getId());
-        }
-        try {
-            return ResponseEntity.created(new URI("/pedidos/" + pedidos.getId())).body(pedidos);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-    }
-
 
     @Operation(summary = "Crear Pedido", description = "Crea un nuevo pedido")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Pedido creado correctamente"),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos")
-    })
-    @PostMapping
-    public ResponseEntity<Pedidos> savePedido(@Valid @RequestBody Pedidos pedidos) throws URISyntaxException {
-        Pedidos pedidoGuardado = pedidosServicio.save(pedidos);
-        return ResponseEntity
-                .created(new URI("/pedidos/" + pedidoGuardado.getId()))
-                .body(pedidoGuardado);
+    @ApiResponses({@ApiResponse(responseCode = "201", description = "Pedido creado correctamente"), @ApiResponse(responseCode = "400", description = "Datos inválidos")})
+    @PostMapping(value = "savePedido")
+    private ResponseEntity<Pedido> savePedido(@Valid @RequestBody Pedido pedido) {
+        Pedido pedidoGuardado = pedidosServicio.crearPedidoCompleto(pedido);
+        return ResponseEntity.created(URI.create("/pedidos/" + pedidoGuardado.getPedidos().getId())).body(pedidoGuardado);
     }
 
+    @PostMapping(value = "addPlatosxPedido")
+    private ResponseEntity<Pedido> addPlatosxPedido(@RequestBody Pedido pedido) {
+        pedidosServicio.addPlatosxPedido(pedido);
+        return ResponseEntity.created(URI.create("/platosxpedido/" + pedido.getPedidos().getId())).body(pedido);
+    }
 
     @DeleteMapping(value = "delete/{id}")
     private ResponseEntity<Boolean> cancelarPedido(@PathVariable("id") Long id) {
-        pedidosServicio.insertarEstado(id, 3l);
+        pedidosServicio.cambiarEstado(id, Estados.CANCELADO);
         return ResponseEntity.ok(pedidosServicio.findById(id).isEmpty());
     }
 
     @GetMapping("totalPedidos")
     private ResponseEntity<Long> totalPedidos() {
-        Long totalPedidos = pedidosServicio.totalPedidos();
-        return ResponseEntity.ok(totalPedidos);
+        return ResponseEntity.ok(pedidosServicio.totalPedidos());
     }
 
     @GetMapping("totalPedidosHoy")
@@ -140,6 +123,7 @@ public class PedidosRest {
     private ResponseEntity<Long> totalPedidosDomiciliosHoy() {
         return ResponseEntity.ok(pedidosServicio.totalPedidosDomiciliosHoy());
     }
+
     @GetMapping("totalPedidosMesaHoy")
     private ResponseEntity<Long> totalPedidosMesaHoy() {
         return ResponseEntity.ok(pedidosServicio.totalPedidosMesaHoy());

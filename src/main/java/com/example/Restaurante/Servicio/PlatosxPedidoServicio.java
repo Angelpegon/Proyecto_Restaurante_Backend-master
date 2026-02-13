@@ -17,13 +17,20 @@ public class PlatosxPedidoServicio {
     public List<PlatosxPedido> findAll() {
         return platosxPedidoRepositorio.findAll();
     }
+
     public <S extends PlatosxPedido> S save(S entity) {
         return platosxPedidoRepositorio.save(entity);
     }
-    public List<PlatosxPedido> findPlatosxPedidoById (Long id){
-        List<PlatosxPedido> PlatosxPedidoRespuesta= new ArrayList<>();
-        List<PlatosxPedido> PlatosxPedido= platosxPedidoRepositorio.findAll();
-        for (int i=0; i<PlatosxPedido.size(); i++) {
+
+    public PlatosxPedido savePlatoxPedido(PlatosxPedido platosxPedido) {
+        PlatosxPedido platoxPedidoGuardado = platosxPedidoRepositorio.save(platosxPedido);
+        return platoxPedidoGuardado;
+    }
+
+    public List<PlatosxPedido> findPlatosxPedidoById(Long id) {
+        List<PlatosxPedido> PlatosxPedidoRespuesta = new ArrayList<>();
+        List<PlatosxPedido> PlatosxPedido = platosxPedidoRepositorio.findAll();
+        for (int i = 0; i < PlatosxPedido.size(); i++) {
             if (PlatosxPedido.get(i).getPedidos().getId().equals(id)) {
                 PlatosxPedidoRespuesta.add(PlatosxPedido.get(i));
             }
@@ -34,6 +41,7 @@ public class PlatosxPedidoServicio {
     public Optional<PlatosxPedido> findById(Long id) {
         return platosxPedidoRepositorio.findById(id);
     }
+
     public Boolean deleteById(Long id) {
         if (platosxPedidoRepositorio.existsById(id)) {
             platosxPedidoRepositorio.deleteById(id);

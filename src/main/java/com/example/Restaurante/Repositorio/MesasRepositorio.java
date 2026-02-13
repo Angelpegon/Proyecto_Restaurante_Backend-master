@@ -10,6 +10,6 @@ import java.util.List;
 @Repository
 @Transactional
 public interface MesasRepositorio extends JpaRepository<Mesas,Long> {
-    @Query("SELECT m FROM Mesas m WHERE NOT EXISTS (SELECT p FROM Pedidos p WHERE p.mesa.id = m.id AND p.estado.id = 1) ORDER BY m.nombre ASC")
+    @Query("SELECT m FROM Mesas m WHERE NOT EXISTS (SELECT p FROM Pedidos p WHERE p.mesa.id = m.id AND p.estado = 'PENDIENTE') ORDER BY m.nombre ASC")
     List<Mesas> verMesasLibres();
 }

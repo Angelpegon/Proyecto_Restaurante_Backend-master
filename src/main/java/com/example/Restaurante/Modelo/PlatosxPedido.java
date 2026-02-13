@@ -21,5 +21,4 @@ public class PlatosxPedido implements Serializable {
     private Platos plato;
     private int cantidad;
     private String nota;
-
 }
